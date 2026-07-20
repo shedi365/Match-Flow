@@ -15,9 +15,9 @@ class Match(Base):
     id = Column(Integer, primary_key=True, index=True)
     tournament_id = Column(Integer, ForeignKey("tournaments.id"), nullable=False)
     player1_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    player2_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Nullable por posibles byes
+    player2_id = Column(Integer, ForeignKey("users.id"), nullable=True) 
     
-    round = Column(Integer, nullable=False, default=1) # 1, 2, 3...
+    round = Column(Integer, nullable=False, default=1) 
     
     score_p1 = Column(Integer, nullable=True)
     score_p2 = Column(Integer, nullable=True)

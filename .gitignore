@@ -1,0 +1,28 @@
+# Entornos virtuales de Python
+venv/
+env/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# SO
+.DS_Store
+Thumbs.db
+
+# Docker
+.env

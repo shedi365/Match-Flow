@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Edit2, X, Loader2 } from 'lucide-react';
-import { updateTournament } from '../../api/tournaments';
-import { toast } from 'sonner';
+import { useUpdateTournamentMutation } from '../../hooks/useTournamentMutations';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 
 interface Tournament {
   id: number;
@@ -22,39 +27,59 @@ interface EditTournamentModalProps {
   tournament: Tournament | null;
 }
 
+const getEditSchema = (minPlayers: number) => z.object({
+  name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
+  description: z.string().optional(),
+  maxPlayers: z.preprocess(
+    (val) => Number(val), 
+    z.number().min(minPlayers, `El torneo ya tiene ${minPlayers} jugadores`).max(64, 'Máximo 64 jugadores')
+  ),
+});
+
+type EditTournamentFormValues = z.infer<ReturnType<typeof getEditSchema>>;
+
 export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({ isOpen, onClose, onUpdated, tournament }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [maxPlayers, setMaxPlayers] = useState(16);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const mutation = useUpdateTournamentMutation();
+  
+  const minPlayers = tournament?.enrolled_players_count || 4;
+  const schema = getEditSchema(minPlayers);
+
+  const form = useForm<EditTournamentFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      name: '',
+      description: '',
+      maxPlayers: 16,
+    },
+  });
 
   useEffect(() => {
     if (tournament && isOpen) {
-      setName(tournament.name);
-      setDescription(tournament.description || '');
-      setMaxPlayers(tournament.max_players);
-      setError('');
+      form.reset({
+        name: tournament.name,
+        description: tournament.description || '',
+        maxPlayers: tournament.max_players,
+      });
     }
-  }, [tournament, isOpen]);
+  }, [tournament, isOpen, form]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = (data: EditTournamentFormValues) => {
     if (!tournament) return;
     
-    setError('');
-    setIsLoading(true);
+    mutation.mutate(
+      { id: tournament.id, name: data.name, description: data.description || '', maxPlayers: data.maxPlayers },
+      {
+        onSuccess: () => {
+          onUpdated();
+          onClose();
+        },
+      }
+    );
+  };
 
-    try {
-      await updateTournament(tournament.id, name, description, maxPlayers);
-      toast.success("Torneo actualizado exitosamente");
-      onUpdated();
-      onClose();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleClose = () => {
+    form.reset();
+    onClose();
   };
 
   return (
@@ -65,94 +90,112 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({ isOpen
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            onClick={handleClose}
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
           />
           <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-lg bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl pointer-events-auto overflow-hidden"
+              className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl pointer-events-auto overflow-hidden"
             >
-              <div className="flex justify-between items-center p-6 border-b border-white/10">
-                <h2 className="text-2xl font-bold flex items-center gap-2 text-white">
-                  <Edit2 className="text-blue-500 w-6 h-6" />
+              <div className="flex justify-between items-center p-6 border-b border-border">
+                <h2 className="text-2xl font-bold flex items-center gap-2 text-foreground">
+                  <Edit2 className="text-primary w-6 h-6" />
                   Editar Torneo
                 </h2>
                 <button
-                  onClick={onClose}
-                  className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+                  onClick={handleClose}
+                  className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-white/10"
                 >
                   <X className="w-6 h-6" />
                 </button>
               </div>
 
               <div className="p-6">
-                {error && (
-                  <div className="mb-6 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
-                    {error}
-                  </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Nombre del Torneo</label>
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
-                      placeholder="Ej: Copa de Verano 2026"
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-muted-foreground">Nombre del Torneo</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Ej: Copa de Verano 2026" 
+                              className="bg-secondary/50 border-white/10 focus-visible:ring-primary h-11"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Descripción (Opcional)</label>
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors h-24 resize-none"
-                      placeholder="Reglas, premios, etc."
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-muted-foreground">Descripción (Opcional)</FormLabel>
+                          <FormControl>
+                            <textarea
+                              className="w-full px-4 py-2 bg-secondary/50 border border-white/10 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors h-24 resize-none"
+                              placeholder="Reglas, premios, etc."
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Límite de Jugadores 
-                      <span className="text-xs text-gray-500 ml-2">(Mínimo: {tournament.enrolled_players_count})</span>
-                    </label>
-                    <select
-                      value={maxPlayers}
-                      onChange={(e) => setMaxPlayers(Number(e.target.value))}
-                      className="w-full px-4 py-2 bg-[#2a2a2a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
-                    >
-                      <option value={4}>4 Jugadores</option>
-                      <option value={8}>8 Jugadores</option>
-                      <option value={16}>16 Jugadores</option>
-                      <option value={32}>32 Jugadores</option>
-                      <option value={64}>64 Jugadores</option>
-                    </select>
-                  </div>
+                    <FormField
+                      control={form.control}
+                      name="maxPlayers"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-muted-foreground">
+                            Límite de Jugadores <span className="text-xs text-muted-foreground ml-2">(Mínimo: {minPlayers})</span>
+                          </FormLabel>
+                          <FormControl>
+                            <select
+                              className="w-full px-4 h-11 bg-secondary/50 border border-white/10 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors appearance-none"
+                              {...field}
+                            >
+                              {[4, 8, 16, 32, 64].map((num) => (
+                                <option key={num} value={num} disabled={num < minPlayers}>
+                                  {num} Jugadores
+                                </option>
+                              ))}
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <div className="pt-4 flex gap-3">
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors font-medium"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="flex-1 flex justify-center items-center px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors font-medium disabled:opacity-50"
-                    >
-                      {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Guardar Cambios'}
-                    </button>
-                  </div>
-                </form>
+                    <div className="pt-4 flex gap-3">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleClose}
+                        className="flex-1 h-12 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground"
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={mutation.isPending}
+                        className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                      >
+                        {mutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Guardar Cambios'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
               </div>
             </motion.div>
           </div>

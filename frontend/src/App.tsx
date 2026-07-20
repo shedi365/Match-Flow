@@ -4,7 +4,18 @@ import { AuthModal } from './components/Auth/AuthModal';
 import { TournamentList } from './components/Tournaments/TournamentList';
 import { BracketTree } from './components/Tournaments/BracketTree';
 import { Toaster } from 'sonner';
-import { LogOut, ArrowLeft } from 'lucide-react';
+import { LogOut, ArrowLeft, Trophy, Settings, User } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from "./components/ui/tabs";
+import { Avatar, AvatarFallback } from "./components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./components/ui/dropdown-menu";
+import { Button } from "./components/ui/button";
 
 function AppContent() {
   const { isAuthenticated, logoutUser, gamertag, isAdmin } = useAuth();
@@ -15,103 +26,125 @@ function AppContent() {
     return <AuthModal />;
   }
 
+  const getInitials = (name: string) => name ? name.substring(0, 2).toUpperCase() : 'U';
+
   return (
-    <div className="min-h-screen bg-[#121212] text-white">
-      <header className="sticky top-0 z-50 flex justify-between items-center bg-[#1a1a1a]/80 backdrop-blur-xl border-b border-white/10 px-8 py-4">
-          {/* Logo (Izquierda) */}
-          <div className="w-1/3">
-            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-              MatchFlow
-            </h1>
-          </div>
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-50 flex justify-between items-center bg-background/80 backdrop-blur-xl border-b border-border px-8 py-4">
+        {/* Logo (Izquierda) */}
+        <div className="w-1/3 flex items-center gap-2">
+          <Trophy className="w-8 h-8 text-primary" />
+          <h1 className="text-3xl font-black italic tracking-tighter uppercase text-white">
+            Match<span className="text-primary">Flow</span>
+          </h1>
+        </div>
 
-          {/* Centro: Pestañas o Botón Volver */}
-          <div className="w-1/3 flex justify-center">
-            {selectedTournamentId ? (
-              <button
-                onClick={() => setSelectedTournamentId(null)}
-                className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 shadow-lg"
-              >
-                <ArrowLeft className="w-5 h-5" /> Volver a Torneos
-              </button>
-            ) : (
-              <div className="flex bg-black/40 border border-white/10 rounded-xl p-1 shadow-inner">
-                <button
-                  onClick={() => setActiveTab('my_tournaments')}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    activeTab === 'my_tournaments' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  Mis Torneos
-                </button>
-                <button
-                  onClick={() => setActiveTab('available')}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    activeTab === 'available' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  Disponibles
-                </button>
-                <button
-                  onClick={() => setActiveTab('history')}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    activeTab === 'history' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  Historial
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Derecha: Perfil y Logout */}
-          <div className="w-1/3 flex justify-end items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm text-gray-200 font-bold">{gamertag}</p>
-              {isAdmin && (
-                <span className="inline-block mt-0.5 bg-purple-500/20 text-purple-300 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-purple-500/30">
-                  Admin
-                </span>
-              )}
-            </div>
-            <div className="w-px h-8 bg-white/10 mx-1"></div>
-            <button 
-              onClick={logoutUser}
-              className="p-2 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
-              title="Cerrar Sesión"
+        {/* Centro: Pestañas o Botón Volver */}
+        <div className="w-1/3 flex justify-center">
+          {selectedTournamentId ? (
+            <Button
+              variant="outline"
+              onClick={() => setSelectedTournamentId(null)}
+              className="gap-2 bg-secondary/50 hover:bg-secondary border-border"
             >
-              <LogOut className="w-5 h-5" />
-            </button>
-          </div>
-        </header>
+              <ArrowLeft className="w-4 h-4" /> Volver a Torneos
+            </Button>
+          ) : (
+            <Tabs 
+              value={activeTab} 
+              onValueChange={(val) => setActiveTab(val as any)}
+              className="w-full max-w-[400px]"
+            >
+              <TabsList className="grid w-full grid-cols-3 bg-secondary/50 border border-border h-11">
+                <TabsTrigger value="my_tournaments" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold rounded-md transition-all">Mis Torneos</TabsTrigger>
+                <TabsTrigger value="available" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold rounded-md transition-all">Disponibles</TabsTrigger>
+                <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold rounded-md transition-all">Historial</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+        </div>
+
+        {/* Derecha: Perfil y Logout */}
+        <div className="w-1/3 flex justify-end items-center gap-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger 
+              render={
+                <Button variant="ghost" className="relative h-12 w-12 rounded-full focus-visible:ring-primary hover:bg-secondary/50 p-0 border border-border">
+                  <Avatar className="h-11 w-11">
+                    <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                      {getInitials(gamertag)}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              }
+            />
+            <DropdownMenuContent className="w-56 bg-card border-border" align="end">
+              <div className="px-2 py-1.5 text-sm font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="font-bold text-foreground leading-none">{gamertag}</p>
+                  <p className="text-xs leading-none text-muted-foreground mt-1">
+                    {isAdmin ? 'Administrador' : 'Jugador'}
+                  </p>
+                </div>
+              </div>
+              <DropdownMenuSeparator className="bg-border" />
+              <DropdownMenuItem className="cursor-pointer focus:bg-secondary/50">
+                <User className="mr-2 h-4 w-4" />
+                <span>Perfil</span>
+              </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem className="cursor-pointer focus:bg-secondary/50">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Configuración</span>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator className="bg-border" />
+              <DropdownMenuItem 
+                onClick={logoutUser}
+                className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Cerrar Sesión</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+      
       <div className="p-8">
         <div className="max-w-6xl mx-auto">
           <main>
-          {selectedTournamentId ? (
-            <BracketTree 
-              tournamentId={selectedTournamentId} 
-              onBack={() => setSelectedTournamentId(null)} 
-            />
-          ) : (
-            <TournamentList 
-              activeTab={activeTab} 
-              onTabChange={setActiveTab}
-              onSelect={(id) => setSelectedTournamentId(id)} 
-            />
-          )}
-        </main>
+            {selectedTournamentId ? (
+              <BracketTree 
+                tournamentId={selectedTournamentId} 
+                onBack={() => setSelectedTournamentId(null)} 
+              />
+            ) : (
+              <TournamentList 
+                activeTab={activeTab} 
+                onTabChange={setActiveTab}
+                onSelect={(id) => setSelectedTournamentId(id)} 
+              />
+            )}
+          </main>
         </div>
       </div>
     </div>
   );
 }
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <AuthProvider>
-      <Toaster theme="dark" position="bottom-right" richColors />
-      <AppContent />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Toaster theme="dark" position="top-center" richColors />
+        <AppContent />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

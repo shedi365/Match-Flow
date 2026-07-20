@@ -6,6 +6,7 @@ import { MatchResultModal } from '../Matches/MatchResultModal';
 import { Podium } from './Podium';
 import { BracketLines } from './BracketLines';
 import { Xwrapper } from 'react-xarrows';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface Match {
   id: number;
@@ -112,15 +113,15 @@ export const BracketTree: React.FC<{ tournamentId: number, onBack: () => void }>
           setSelectedMatch(match);
         }
       }}
-      className={`w-64 bg-black/40 border border-white/10 rounded-xl overflow-hidden shadow-2xl relative z-10 ${match.player2 ? 'cursor-pointer hover:border-purple-500/50 hover:shadow-purple-500/20 transition-all' : ''}`}
+      className={`w-64 bg-card border border-border rounded-xl overflow-hidden shadow-2xl relative z-10 ${match.player2 ? 'cursor-pointer hover:border-primary/50 hover:shadow-primary/20 transition-all' : ''}`}
     >
       {match.status === 'COMPLETED' && !match.player2 && (
-        <div className="absolute top-0 right-0 bg-yellow-500/20 text-yellow-500 text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">
+        <div className="absolute top-0 right-0 bg-secondary text-foreground text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">
           BYE
         </div>
       )}
       {match.status === 'IN_PROGRESS' && (
-        <div className="absolute top-0 right-0 flex items-center gap-1 bg-red-500/90 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold shadow-lg">
+        <div className="absolute top-0 right-0 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] px-2 py-0.5 rounded-bl-lg font-bold shadow-lg">
           <motion.div 
             animate={{ opacity: [1, 0, 1] }}
             transition={{ repeat: Infinity, duration: 1.5 }}
@@ -130,72 +131,71 @@ export const BracketTree: React.FC<{ tournamentId: number, onBack: () => void }>
         </div>
       )}
       
-      <div className={`flex justify-between items-center p-3 border-b border-white/5 ${match.winner?.gamertag === match.player1?.gamertag ? 'bg-green-500/10' : ''}`}>
-        <span className="flex items-center gap-2 font-semibold text-sm">
-          <User className="w-4 h-4 text-gray-400" />
-          {match.player1?.gamertag || <span className="text-gray-500 italic">Por definir</span>}
+      <div className={`flex justify-between items-center p-3 border-b border-border ${match.winner?.gamertag === match.player1?.gamertag ? 'bg-primary/20' : ''}`}>
+        <span className="flex items-center gap-2 font-semibold text-sm text-foreground">
+          <User className="w-4 h-4 text-muted-foreground" />
+          {match.player1?.gamertag || <span className="text-muted-foreground italic">Por definir</span>}
         </span>
-        <span className="font-mono font-bold">{match.score_p1 ?? '-'}</span>
+        <span className="font-mono font-bold text-foreground">{match.score_p1 ?? '-'}</span>
       </div>
       
-      <div className={`flex justify-between items-center p-3 ${match.winner?.gamertag === match.player2?.gamertag ? 'bg-green-500/10' : ''}`}>
-        <span className="flex items-center gap-2 font-semibold text-sm">
-          <User className="w-4 h-4 text-gray-400" />
-          {match.player2?.gamertag || <span className="text-gray-500 italic">Por definir</span>}
+      <div className={`flex justify-between items-center p-3 ${match.winner?.gamertag === match.player2?.gamertag ? 'bg-primary/20' : ''}`}>
+        <span className="flex items-center gap-2 font-semibold text-sm text-foreground">
+          <User className="w-4 h-4 text-muted-foreground" />
+          {match.player2?.gamertag || <span className="text-muted-foreground italic">Por definir</span>}
         </span>
-        <span className="font-mono font-bold">{match.score_p2 ?? '-'}</span>
+        <span className="font-mono font-bold text-foreground">{match.score_p2 ?? '-'}</span>
       </div>
     </motion.div>
   );
 
   return (
     <div className="space-y-6">
-      {/* Eliminated internal Back button, now handled by Navbar */}
-      
-      <div className="bg-[#111] border border-white/10 p-8 rounded-3xl overflow-x-auto relative">
-        <h2 className="text-2xl font-bold mb-12 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
-          Bracket del Torneo
+      <div className="bg-card/50 backdrop-blur-sm border border-border p-2 md:p-8 rounded-3xl relative">
+        <h2 className="text-2xl font-black italic tracking-tight uppercase mb-8 text-center text-foreground drop-shadow-md">
+          Bracket del <span className="text-primary">Torneo</span>
         </h2>
         
         {matches.length > 0 ? (
-          <Xwrapper>
-            <div className="flex gap-20 min-w-max relative justify-center items-center py-12">
-              <BracketLines matches={matches} />
-              
-              {/* Lado Izquierdo */}
-            <div className="flex gap-16">
-              {leftRoundNumbers.map(roundNum => (
-                <div key={`left-${roundNum}`} className="flex flex-col justify-around gap-8">
-                  {leftRounds[roundNum].map(match => renderMatchCard(match))}
+          <ScrollArea className="w-full rounded-md border border-border/50 bg-background/50">
+            <Xwrapper>
+              <div className="flex gap-20 min-w-max relative justify-center items-center py-12 px-12">
+                <BracketLines matches={matches} />
+                
+                {/* Lado Izquierdo */}
+                <div className="flex gap-16">
+                  {leftRoundNumbers.map(roundNum => (
+                    <div key={`left-${roundNum}`} className="flex flex-col justify-around gap-8">
+                      {leftRounds[roundNum].map(match => renderMatchCard(match))}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            {/* Centro (La Final) */}
-            <div className="flex flex-col items-center justify-center gap-8 mx-8">
-              <h3 className="text-center font-black text-yellow-500 uppercase tracking-widest text-lg drop-shadow-md">
-                Gran Final
-              </h3>
-              {finalMatch && renderMatchCard(finalMatch)}
-              
-              {isTournamentCompleted && tournamentWinner && (
-                <Podium winnerGamertag={tournamentWinner} />
-              )}
-            </div>
-
-            {/* Lado Derecho */}
-            <div className="flex gap-16">
-              {[...rightRoundNumbers].reverse().map(roundNum => (
-                <div key={`right-${roundNum}`} className="flex flex-col justify-around gap-8">
-                  {rightRounds[roundNum].map(match => renderMatchCard(match))}
+                {/* Centro (La Final) */}
+                <div className="flex flex-col items-center justify-center gap-8 mx-8">
+                  <h3 className="text-center font-black text-primary uppercase tracking-widest text-lg drop-shadow-md">
+                    Gran Final
+                  </h3>
+                  {finalMatch && renderMatchCard(finalMatch)}
+                  
+                  {isTournamentCompleted && tournamentWinner && (
+                    <Podium winnerGamertag={tournamentWinner} />
+                  )}
                 </div>
-              ))}
-            </div>
-            
-            </div>
-          </Xwrapper>
+
+                {/* Lado Derecho */}
+                <div className="flex gap-16">
+                  {[...rightRoundNumbers].reverse().map(roundNum => (
+                    <div key={`right-${roundNum}`} className="flex flex-col justify-around gap-8">
+                      {rightRounds[roundNum].map(match => renderMatchCard(match))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Xwrapper>
+          </ScrollArea>
         ) : (
-          <p className="text-gray-500 text-center">Aún no se han generado las llaves de este torneo.</p>
+          <p className="text-muted-foreground text-center py-12">Aún no se han generado las llaves de este torneo.</p>
         )}
       </div>
       

@@ -8,4 +8,17 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-dom/client',
+      'sonner',
+      'react-xarrows',
+      'react-confetti',
+      'lucide-react',
+      'framer-motion',
+      'jwt-decode'
+    ]
+  }
 })

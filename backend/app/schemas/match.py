@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
 from app.models.match import MatchStatus
@@ -33,8 +33,7 @@ class MatchResponse(MatchBase):
     player2: Optional[UserResponse] = None
     winner: Optional[UserResponse] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MatchReport(BaseModel):
     score_p1: int

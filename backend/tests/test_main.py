@@ -11,9 +11,15 @@ from app.models.role import Role
 from app.models.tournament import Tournament
 from app.models.match import Match
 
+from sqlalchemy.pool import StaticPool
+
 # Setup In-Memory SQLite for tests
-SQLALCHEMY_DATABASE_URL = "sqlite:///file:testdb?mode=memory&cache=shared"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False, "uri": True})
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool
+)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def override_get_db():

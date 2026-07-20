@@ -19,14 +19,17 @@ interface Tournament {
   created_at: string;
 }
 
-export const TournamentList: React.FC<{ onSelect: (id: number) => void }> = ({ onSelect }) => {
+export const TournamentList: React.FC<{ 
+  activeTab: 'my_tournaments' | 'available' | 'history',
+  onTabChange: (tab: 'my_tournaments' | 'available' | 'history') => void,
+  onSelect: (id: number) => void 
+}> = ({ activeTab, onTabChange, onSelect }) => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'my_tournaments' | 'available' | 'history'>('my_tournaments');
   const [searchQuery, setSearchQuery] = useState('');
   const [maxPlayersFilter, setMaxPlayersFilter] = useState<number | 'all'>('all');
   const { isAdmin } = useAuth();
@@ -140,39 +143,7 @@ export const TournamentList: React.FC<{ onSelect: (id: number) => void }> = ({ o
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 w-full sm:w-auto">
-          <button
-            onClick={() => setActiveTab('my_tournaments')}
-            className={`flex-1 sm:px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
-              activeTab === 'my_tournaments' 
-                ? 'bg-purple-600 shadow-lg text-white' 
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            Mis Torneos
-          </button>
-          <button
-            onClick={() => setActiveTab('available')}
-            className={`flex-1 sm:px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
-              activeTab === 'available' 
-                ? 'bg-purple-600 shadow-lg text-white' 
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            Disponibles
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`flex-1 sm:px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
-              activeTab === 'history' 
-                ? 'bg-purple-600 shadow-lg text-white' 
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            Historial
-          </button>
-        </div>
+      <div className="flex justify-end gap-4">
 
         {isAdmin && (
           <button
@@ -337,7 +308,10 @@ export const TournamentList: React.FC<{ onSelect: (id: number) => void }> = ({ o
       <CreateTournamentModal 
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)} 
-        onCreated={loadTournaments} 
+        onCreated={() => {
+          loadTournaments();
+          onTabChange('available');
+        }} 
       />
 
       <EditTournamentModal 

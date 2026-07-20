@@ -8,6 +8,13 @@ const getAuthHeaders = () => {
   };
 };
 
+const getUploadHeaders = () => {
+  const token = localStorage.getItem('matchflow_token');
+  return {
+    'Authorization': `Bearer ${token}`
+  };
+};
+
 export async function fetchTournaments() {
   const response = await fetch(`${API_URL}/tournaments/`, {
     headers: getAuthHeaders()
@@ -138,6 +145,36 @@ export async function verifyMatchResult(matchId: number, data: any) {
   if (!response.ok) {
     const err = await response.json();
     throw new Error(err.detail || 'Error al verificar resultado');
+  }
+  return response.json();
+}
+
+export async function uploadMatchEvidence(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const response = await fetch(`${API_URL}/matches/upload-evidence`, {
+    method: 'POST',
+    headers: getUploadHeaders(),
+    body: formData
+  });
+  
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.detail || 'Error al subir la imagen');
+  }
+  return response.json();
+}
+
+export async function rivalMatchAction(matchId: number, action: 'ACCEPT' | 'REJECT') {
+  const response = await fetch(`${API_URL}/matches/${matchId}/rival-action`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ action })
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.detail || 'Error al enviar respuesta del rival');
   }
   return response.json();
 }

@@ -19,6 +19,7 @@ class MatchBase(BaseModel):
     p2_has_reported: bool = False
     p1_evidence_url: Optional[str] = None
     p2_evidence_url: Optional[str] = None
+    reported_by_id: Optional[int] = None
 
 class MatchCreate(MatchBase):
     pass
@@ -48,3 +49,6 @@ class MatchVerify(BaseModel):
     penalties_p1: Optional[int] = None
     penalties_p2: Optional[int] = None
     winner_id: int
+
+class MatchRivalAction(BaseModel):
+    action: str # "ACCEPT" or "REJECT"

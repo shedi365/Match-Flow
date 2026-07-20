@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.routers import auth, tournaments, matches
+import os
 
 from app.database import SessionLocal
 from app.models.role import Role
@@ -20,6 +22,8 @@ def seed_roles():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Crear directorio para subida de medios si no existe
+    os.makedirs("/app/media", exist_ok=True)
     # Lógica de inicio (Seed roles)
     seed_roles()
     yield
@@ -43,6 +47,9 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(tournaments.router)
 app.include_router(matches.router)
+
+# Montar directorio estático
+app.mount("/media", StaticFiles(directory="/app/media"), name="media")
 
 @app.get("/")
 def read_root():

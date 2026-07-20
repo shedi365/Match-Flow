@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchMatches } from '../../api/tournaments';
-import { Loader2, ArrowLeft, User } from 'lucide-react';
+import { Loader2, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MatchResultModal } from '../Matches/MatchResultModal';
 import { Podium } from './Podium';
@@ -27,7 +27,7 @@ interface Match {
   p2_evidence_url: string | null;
 }
 
-export const BracketTree: React.FC<{ tournamentId: number, onBack: () => void }> = ({ tournamentId, onBack }) => {
+export const BracketTree: React.FC<{ tournamentId: number, onBack: () => void }> = ({ tournamentId }) => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -150,12 +150,7 @@ export const BracketTree: React.FC<{ tournamentId: number, onBack: () => void }>
 
   return (
     <div className="space-y-6">
-      <button 
-        onClick={onBack}
-        className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" /> Volver a Torneos
-      </button>
+      {/* Eliminated internal Back button, now handled by Navbar */}
       
       <div className="bg-[#111] border border-white/10 p-8 rounded-3xl overflow-x-auto relative">
         <h2 className="text-2xl font-bold mb-12 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">

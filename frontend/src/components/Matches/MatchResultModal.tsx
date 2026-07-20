@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Swords, X, Loader2, CheckCircle2, ShieldAlert, Upload, Trophy } from 'lucide-react';
-import { startMatch, reportMatchResult, verifyMatchResult } from '../../api/tournaments';
+import { startMatch, reportMatchResult, verifyMatchResult, uploadMatchEvidence, rivalMatchAction } from '../../api/tournaments';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 
@@ -25,6 +26,7 @@ interface Match {
   p1_evidence_url: string | null;
   p2_evidence_url: string | null;
   evidence_url?: string | null;
+  reported_by_id: number | null;
 }
 
 interface MatchResultModalProps {
@@ -42,6 +44,13 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({ isOpen, onCl
   const [penaltiesP1, setPenaltiesP1] = useState<number | ''>('');
   const [penaltiesP2, setPenaltiesP2] = useState<number | ''>('');
   const [evidenceUrl, setEvidenceUrl] = useState('');
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  
+  const getFullUrl = (url: string | null | undefined) => {
+    if (!url) return undefined;
+    if (url.startsWith('http')) return url;
+    return `${API_URL}${url}`;
+  };
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,7 +58,12 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({ isOpen, onCl
   const isTied = scoreP1 !== '' && scoreP2 !== '' && Number(scoreP1) === Number(scoreP2);
   
   // Checks if current user is involved in this match
-  const isParticipant = gamertag && match && (gamertag === match.player1?.gamertag || gamertag === match.player2?.gamertag);
+  const isPlayer1 = gamertag === match?.player1?.gamertag;
+  const isPlayer2 = gamertag === match?.player2?.gamertag;
+  const isParticipant = gamertag && match && (isPlayer1 || isPlayer2);
+  
+  const currentUserId = isPlayer1 ? match?.player1_id : (isPlayer2 ? match?.player2_id : null);
+  const isRivalToValidate = currentUserId !== null && match?.reported_by_id !== null && currentUserId !== match?.reported_by_id;
 
   useEffect(() => {
     if (match && isOpen) {
@@ -58,6 +72,7 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({ isOpen, onCl
       setPenaltiesP1(match.penalties_p1 ?? '');
       setPenaltiesP2(match.penalties_p2 ?? '');
       setEvidenceUrl('');
+      setEvidenceFile(null);
       setError('');
     }
   }, [match, isOpen]);
@@ -72,6 +87,20 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({ isOpen, onCl
       onUpdated();
     } catch (err: any) {
       toast.error(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRivalAction = async (action: 'ACCEPT' | 'REJECT') => {
+    setIsLoading(true);
+    try {
+      await rivalMatchAction(match.id, action);
+      toast.success(action === 'ACCEPT' ? "Resultado aceptado y finalizado" : "Disputa iniciada, un administrador revisará el caso");
+      onUpdated();
+      onClose();
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -94,12 +123,18 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({ isOpen, onCl
 
     setIsLoading(true);
     try {
+      let uploadedUrl = evidenceUrl;
+      if (evidenceFile) {
+        const res = await uploadMatchEvidence(evidenceFile);
+        uploadedUrl = res.evidence_url;
+      }
+
       await reportMatchResult(match.id, {
         score_p1: Number(scoreP1),
         score_p2: Number(scoreP2),
         penalties_p1: isTied ? Number(penaltiesP1) : null,
         penalties_p2: isTied ? Number(penaltiesP2) : null,
-        evidence_url: evidenceUrl || null
+        evidence_url: uploadedUrl || null
       });
       toast.success("Resultado reportado. Esperando validación del administrador.");
       onUpdated();
@@ -228,10 +263,11 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({ isOpen, onCl
                   </div>
                 )}
 
-                {/* State: IN_PROGRESS or AWAITING_VALIDATION (Editing Form) */}
+                {/* State: IN_PROGRESS, AWAITING_VALIDATION (Admin), or DISPUTE (Admin) */}
                 {((match.status === 'IN_PROGRESS' && isParticipant) || 
                   (match.status === 'AWAITING_VALIDATION' && isAdmin) ||
-                  (match.status === 'IN_PROGRESS' && isAdmin)) && (
+                  (match.status === 'IN_PROGRESS' && isAdmin) ||
+                  (match.status === 'DISPUTE' && isAdmin)) && (
                   <form onSubmit={isAdmin ? handleVerify : handleReport} className="space-y-6">
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest text-center mb-4">Goles</h3>
@@ -293,26 +329,40 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({ isOpen, onCl
                     {match.status === 'IN_PROGRESS' && (
                       <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2 flex items-center gap-2">
-                          <Upload className="w-4 h-4" /> Enlace de Evidencia (Opcional)
+                          <Upload className="w-4 h-4" /> Subir Evidencia (Opcional)
                         </label>
                         <input
-                          type="url"
-                          value={evidenceUrl}
-                          onChange={(e) => setEvidenceUrl(e.target.value)}
-                          className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
-                          placeholder="https://imgur.com/... o clip de Twitch"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              if (file.size > 5 * 1024 * 1024) {
+                                setError("La imagen no debe superar los 5MB");
+                                setEvidenceFile(null);
+                                e.target.value = '';
+                              } else {
+                                setEvidenceFile(file);
+                                setError('');
+                              }
+                            } else {
+                                setEvidenceFile(null);
+                            }
+                          }}
+                          className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-500/20 file:text-purple-400 hover:file:bg-purple-500/30 transition-all cursor-pointer"
                         />
+                        <p className="text-xs text-gray-500 mt-2">Máximo 5MB. Formatos soportados: JPG, PNG, WEBP.</p>
                       </div>
                     )}
 
-                    {(match.status === 'AWAITING_VALIDATION' || match.status === 'IN_PROGRESS') && isAdmin && (
-                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-sm text-blue-300">
-                        Como administrador, al guardar finalizarás el partido directamente con este marcador.
+                    {(match.status === 'AWAITING_VALIDATION' || match.status === 'DISPUTE' || match.status === 'IN_PROGRESS') && isAdmin && (
+                      <div className={`border rounded-xl p-4 text-sm ${match.status === 'DISPUTE' ? 'bg-red-500/10 border-red-500/20 text-red-300' : 'bg-blue-500/10 border-blue-500/20 text-blue-300'}`}>
+                        {match.status === 'DISPUTE' ? '⚠️ PARTIDO EN DISPUTA: Forzar la resolución del partido con este marcador.' : 'Como administrador, al guardar finalizarás el partido directamente con este marcador.'}
                         {(match.p1_evidence_url || match.p2_evidence_url) && (
-                          <div className="mt-2 pt-2 border-t border-blue-500/20">
-                            <strong>Evidencias:</strong>
-                            {match.p1_evidence_url && <a href={match.p1_evidence_url} target="_blank" rel="noreferrer" className="block text-blue-400 hover:underline">Prueba Jugador 1</a>}
-                            {match.p2_evidence_url && <a href={match.p2_evidence_url} target="_blank" rel="noreferrer" className="block text-red-400 hover:underline">Prueba Jugador 2</a>}
+                          <div className={`mt-2 pt-2 border-t ${match.status === 'DISPUTE' ? 'border-red-500/20' : 'border-blue-500/20'}`}>
+                            <strong>Evidencias aportadas:</strong>
+                            {match.p1_evidence_url && <a href={getFullUrl(match.p1_evidence_url)} target="_blank" rel="noreferrer" className="block text-blue-400 hover:underline">Prueba Jugador 1</a>}
+                            {match.p2_evidence_url && <a href={getFullUrl(match.p2_evidence_url)} target="_blank" rel="noreferrer" className="block text-red-400 hover:underline">Prueba Jugador 2</a>}
                           </div>
                         )}
                       </div>
@@ -332,12 +382,59 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({ isOpen, onCl
                   </form>
                 )}
 
-                {/* State: AWAITING_VALIDATION (Read Only for non-admin) */}
+                {/* State: AWAITING_VALIDATION (Rival Action or Read Only) */}
                 {match.status === 'AWAITING_VALIDATION' && !isAdmin && (
-                  <div className="text-center py-8 bg-white/5 rounded-2xl border border-white/10">
-                    <Loader2 className="w-12 h-12 text-yellow-500 animate-spin mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-white mb-2">Esperando Validación</h3>
-                    <p className="text-gray-400">El resultado ha sido reportado y está siendo revisado por un administrador.</p>
+                  <>
+                    {isRivalToValidate ? (
+                      <div className="text-center py-6 bg-white/5 rounded-2xl border border-white/10 px-4">
+                        <h3 className="text-xl font-bold text-white mb-2">Validar Resultado</h3>
+                        <p className="text-gray-400 mb-6">Tu rival ha reportado el siguiente marcador:</p>
+                        
+                        <div className="flex justify-center items-center gap-6 mb-6">
+                          <span className="text-3xl font-black text-blue-400">{match.score_p1}</span>
+                          <span className="text-xl text-gray-600">-</span>
+                          <span className="text-3xl font-black text-red-400">{match.score_p2}</span>
+                        </div>
+                        {match.penalties_p1 !== null && (
+                          <div className="mb-6">
+                            <p className="text-sm text-gray-400 uppercase">Penaltis</p>
+                            <span className="text-xl font-bold text-yellow-400">{match.penalties_p1} - {match.penalties_p2}</span>
+                          </div>
+                        )}
+
+                        <div className="flex gap-4">
+                          <button
+                            onClick={() => handleRivalAction('ACCEPT')}
+                            disabled={isLoading}
+                            className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition"
+                          >
+                            <CheckCircle2 className="w-5 h-5" /> Aceptar
+                          </button>
+                          <button
+                            onClick={() => handleRivalAction('REJECT')}
+                            disabled={isLoading}
+                            className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition"
+                          >
+                            <X className="w-5 h-5" /> Rechazar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 bg-white/5 rounded-2xl border border-white/10">
+                        <Loader2 className="w-12 h-12 text-yellow-500 animate-spin mx-auto mb-4" />
+                        <h3 className="text-xl font-bold text-white mb-2">Esperando Validación</h3>
+                        <p className="text-gray-400">El resultado ha sido reportado y está esperando validación del rival.</p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* State: DISPUTE (Non-admin view) */}
+                {match.status === 'DISPUTE' && !isAdmin && (
+                  <div className="text-center py-8 bg-red-500/10 rounded-2xl border border-red-500/20">
+                    <ShieldAlert className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-white mb-2">En Disputa</h3>
+                    <p className="text-gray-400">El resultado fue rechazado. Un administrador revisará el caso para forzar el resultado.</p>
                   </div>
                 )}
 
@@ -370,9 +467,9 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({ isOpen, onCl
                         <div className="mt-4 pt-4 border-t border-green-500/20 relative z-10 text-sm">
                           <p className="text-gray-400 uppercase tracking-widest mb-2 text-center text-xs">Evidencias Adjuntas</p>
                           <div className="flex justify-center gap-4">
-                            {match.p1_evidence_url && <a href={match.p1_evidence_url} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">Prueba Jugador 1</a>}
-                            {match.p2_evidence_url && <a href={match.p2_evidence_url} target="_blank" rel="noreferrer" className="text-red-400 hover:underline">Prueba Jugador 2</a>}
-                            {match.evidence_url && <a href={match.evidence_url} target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">Evidencia Extra</a>}
+                            {match.p1_evidence_url && <a href={getFullUrl(match.p1_evidence_url)} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">Prueba Jugador 1</a>}
+                            {match.p2_evidence_url && <a href={getFullUrl(match.p2_evidence_url)} target="_blank" rel="noreferrer" className="text-red-400 hover:underline">Prueba Jugador 2</a>}
+                            {match.evidence_url && <a href={getFullUrl(match.evidence_url)} target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">Evidencia Extra</a>}
                           </div>
                         </div>
                       )}

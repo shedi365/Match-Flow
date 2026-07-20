@@ -17,7 +17,8 @@ class Match(Base):
     player1_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     player2_id = Column(Integer, ForeignKey("users.id"), nullable=True) 
     
-    round = Column(Integer, nullable=False, default=1) 
+    round_number = Column(Integer, nullable=False, default=1)
+    match_number = Column(Integer, nullable=False, default=1)
     
     score_p1 = Column(Integer, nullable=True)
     score_p2 = Column(Integer, nullable=True)

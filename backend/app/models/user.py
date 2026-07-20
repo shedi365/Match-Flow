@@ -15,3 +15,7 @@ class User(Base):
 
     # Relación con la tabla Role
     role = relationship("Role")
+
+    @property
+    def role_name(self) -> str:
+        return self.role.name if self.role else ""

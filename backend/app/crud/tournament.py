@@ -12,7 +12,11 @@ def get_tournament(db: Session, tournament_id: int):
     return db.query(Tournament).filter(Tournament.id == tournament_id).first()
 
 def create_tournament(db: Session, tournament: TournamentCreate):
-    db_tournament = Tournament(name=tournament.name)
+    db_tournament = Tournament(
+        name=tournament.name,
+        description=tournament.description,
+        max_players=tournament.max_players
+    )
     db.add(db_tournament)
     db.commit()
     db.refresh(db_tournament)
@@ -46,3 +50,11 @@ def update_tournament_status(db: Session, tournament_id: int, status: Tournament
         db.commit()
         db.refresh(tournament)
     return tournament
+
+def delete_tournament(db: Session, tournament_id: int):
+    tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
+    if tournament:
+        db.delete(tournament)
+        db.commit()
+        return True
+    return False

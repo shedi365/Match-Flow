@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthModal } from './components/Auth/AuthModal';
 import { TournamentList } from './components/Tournaments/TournamentList';
 import { BracketTree } from './components/Tournaments/BracketTree';
+import { Toaster } from 'sonner';
 
 function AppContent() {
   const { isAuthenticated, logoutUser, gamertag, isAdmin } = useAuth();
@@ -54,6 +55,7 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
+      <Toaster theme="dark" position="bottom-right" richColors />
       <AppContent />
     </AuthProvider>
   );

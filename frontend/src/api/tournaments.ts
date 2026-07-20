@@ -16,11 +16,11 @@ export async function fetchTournaments() {
   return response.json();
 }
 
-export async function createTournament(name: string) {
+export async function createTournament(name: string, description: string, maxPlayers: number) {
   const response = await fetch(`${API_URL}/tournaments/`, {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ name })
+    body: JSON.stringify({ name, description, max_players: maxPlayers })
   });
   if (!response.ok) {
     const data = await response.json();
@@ -59,4 +59,15 @@ export async function fetchMatches(tournamentId: number) {
   });
   if (!response.ok) throw new Error('Error al cargar partidos');
   return response.json();
+}
+
+export async function deleteTournament(tournamentId: number) {
+  const response = await fetch(`${API_URL}/tournaments/${tournamentId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.detail || 'Error al eliminar el torneo');
+  }
 }

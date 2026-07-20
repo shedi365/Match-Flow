@@ -20,7 +20,6 @@ class MatchCreate(MatchBase):
 class MatchResponse(MatchBase):
     id: int
     status: MatchStatus
-    created_at: datetime
     
     # Podríamos incluir los schemas de los usuarios para renderizar los nombres fácilmente
     player1: Optional[UserResponse] = None

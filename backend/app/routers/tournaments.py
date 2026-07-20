@@ -26,18 +26,30 @@ def create_new_tournament(
     return create_tournament(db, tournament)
 
 @router.get("/", response_model=List[TournamentDetailResponse])
-def list_tournaments(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def list_tournaments(
+    skip: int = 0, 
+    limit: int = 100, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     tournaments = get_tournaments(db, skip=skip, limit=limit)
-    # Agregar count de players
+    
     results = []
     for t in tournaments:
-        count = len(get_enrollments(db, t.id))
+        enrollments = get_enrollments(db, t.id)
+        count = len(enrollments)
+        # Verificar si current_user está en la lista de inscripciones
+        is_enrolled = any(e.user_id == current_user.id for e in enrollments)
+        
         t_dict = {
             "id": t.id,
             "name": t.name,
+            "description": t.description,
+            "max_players": t.max_players,
             "status": t.status,
             "created_at": t.created_at,
-            "enrolled_players_count": count
+            "enrolled_players_count": count,
+            "is_enrolled": is_enrolled
         }
         results.append(t_dict)
     return results
@@ -51,8 +63,12 @@ def enroll_in_tournament(
     tournament = get_tournament(db, tournament_id)
     if not tournament:
         raise HTTPException(status_code=404, detail="Torneo no encontrado")
-    if tournament.status.value != "OPEN":
+    if tournament.status.value != "REGISTRATION":
         raise HTTPException(status_code=400, detail="El torneo no está abierto para inscripciones")
+        
+    enrollments = get_enrollments(db, tournament_id)
+    if len(enrollments) >= tournament.max_players:
+        raise HTTPException(status_code=400, detail="El torneo ha alcanzado su límite máximo de jugadores")
         
     return enroll_user(db, tournament_id=tournament_id, user_id=current_user.id)
 
@@ -65,7 +81,7 @@ def generate_tournament_bracket(
     tournament = get_tournament(db, tournament_id)
     if not tournament:
         raise HTTPException(status_code=404, detail="Torneo no encontrado")
-    if tournament.status.value != "OPEN":
+    if tournament.status.value != "REGISTRATION":
         raise HTTPException(status_code=400, detail="El torneo ya no está en fase de inscripción")
         
     try:
@@ -80,3 +96,17 @@ def list_tournament_matches(
     db: Session = Depends(get_db)
 ):
     return get_tournament_matches(db, tournament_id)
+
+@router.delete("/{tournament_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_tournament_endpoint(
+    tournament_id: int, 
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user)
+):
+    from app.crud.tournament import delete_tournament
+    
+    success = delete_tournament(db, tournament_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Torneo no encontrado")
+        
+    return None

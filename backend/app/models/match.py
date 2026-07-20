@@ -1,10 +1,11 @@
 import enum
-from sqlalchemy import Column, Integer, String, Enum, ForeignKey
+from sqlalchemy import Column, Integer, String, Enum, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 
 class MatchStatus(str, enum.Enum):
     PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
     AWAITING_VALIDATION = "AWAITING_VALIDATION"
     DISPUTE = "DISPUTE"
     COMPLETED = "COMPLETED"
@@ -14,7 +15,7 @@ class Match(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     tournament_id = Column(Integer, ForeignKey("tournaments.id"), nullable=False)
-    player1_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    player1_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     player2_id = Column(Integer, ForeignKey("users.id"), nullable=True) 
     
     round_number = Column(Integer, nullable=False, default=1)
@@ -22,7 +23,14 @@ class Match(Base):
     
     score_p1 = Column(Integer, nullable=True)
     score_p2 = Column(Integer, nullable=True)
+    penalties_p1 = Column(Integer, nullable=True)
+    penalties_p2 = Column(Integer, nullable=True)
     
+    p1_has_reported = Column(Boolean, default=False)
+    p2_has_reported = Column(Boolean, default=False)
+    
+    p1_evidence_url = Column(String(500), nullable=True)
+    p2_evidence_url = Column(String(500), nullable=True)    
     status = Column(Enum(MatchStatus), default=MatchStatus.PENDING, nullable=False)
     
     evidence_url = Column(String(500), nullable=True)

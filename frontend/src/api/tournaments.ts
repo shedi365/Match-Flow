@@ -29,6 +29,19 @@ export async function createTournament(name: string, description: string, maxPla
   return response.json();
 }
 
+export async function updateTournament(tournamentId: number, name: string, description: string, maxPlayers: number) {
+  const response = await fetch(`${API_URL}/tournaments/${tournamentId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ name, description, max_players: maxPlayers })
+  });
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.detail || 'Error al actualizar torneo');
+  }
+  return response.json();
+}
+
 export async function enrollInTournament(tournamentId: number) {
   const response = await fetch(`${API_URL}/tournaments/${tournamentId}/enroll`, {
     method: 'POST',
@@ -38,6 +51,25 @@ export async function enrollInTournament(tournamentId: number) {
     const data = await response.json();
     throw new Error(data.detail || 'Error al inscribirse');
   }
+  return response.json();
+}
+
+export async function unenrollFromTournament(tournamentId: number) {
+  const response = await fetch(`${API_URL}/tournaments/${tournamentId}/enroll`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.detail || 'Error al abandonar el torneo');
+  }
+}
+
+export async function fetchTournamentParticipants(tournamentId: number) {
+  const response = await fetch(`${API_URL}/tournaments/${tournamentId}/participants`, {
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) throw new Error('Error al cargar participantes');
   return response.json();
 }
 
@@ -70,4 +102,42 @@ export async function deleteTournament(tournamentId: number) {
     const data = await response.json();
     throw new Error(data.detail || 'Error al eliminar el torneo');
   }
+}
+
+export async function startMatch(matchId: number) {
+  const response = await fetch(`${API_URL}/matches/${matchId}/start`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.detail || 'Error al iniciar el partido');
+  }
+  return response.json();
+}
+
+export async function reportMatchResult(matchId: number, data: any) {
+  const response = await fetch(`${API_URL}/matches/${matchId}/report`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.detail || 'Error al reportar resultado');
+  }
+  return response.json();
+}
+
+export async function verifyMatchResult(matchId: number, data: any) {
+  const response = await fetch(`${API_URL}/matches/${matchId}/verify`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.detail || 'Error al verificar resultado');
+  }
+  return response.json();
 }

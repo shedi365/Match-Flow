@@ -11,6 +11,9 @@ class TournamentBase(BaseModel):
 class TournamentCreate(TournamentBase):
     pass
 
+class TournamentUpdate(TournamentBase):
+    pass
+
 class TournamentResponse(TournamentBase):
     id: int
     status: TournamentStatus

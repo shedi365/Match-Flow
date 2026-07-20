@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models.tournament import Tournament, TournamentEnrollment, TournamentStatus
 from app.models.match import Match, MatchStatus
-from app.schemas.tournament import TournamentCreate
+from app.schemas.tournament import TournamentCreate, TournamentUpdate
 from typing import List
 
 def get_tournaments(db: Session, skip: int = 0, limit: int = 100):
@@ -22,6 +22,17 @@ def create_tournament(db: Session, tournament: TournamentCreate):
     db.refresh(db_tournament)
     return db_tournament
 
+def update_tournament(db: Session, tournament_id: int, tournament_data: TournamentUpdate):
+    tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
+    if tournament:
+        tournament.name = tournament_data.name
+        tournament.description = tournament_data.description
+        if tournament_data.max_players:
+            tournament.max_players = tournament_data.max_players
+        db.commit()
+        db.refresh(tournament)
+    return tournament
+
 def get_enrollments(db: Session, tournament_id: int):
     return db.query(TournamentEnrollment).filter(TournamentEnrollment.tournament_id == tournament_id).all()
 
@@ -39,6 +50,17 @@ def enroll_user(db: Session, tournament_id: int, user_id: int):
     db.commit()
     db.refresh(enrollment)
     return enrollment
+
+def unenroll_user(db: Session, tournament_id: int, user_id: int):
+    enrollment = db.query(TournamentEnrollment).filter_by(
+        tournament_id=tournament_id, user_id=user_id
+    ).first()
+    
+    if enrollment:
+        db.delete(enrollment)
+        db.commit()
+        return True
+    return False
 
 def get_tournament_matches(db: Session, tournament_id: int) -> List[Match]:
     return db.query(Match).filter(Match.tournament_id == tournament_id).order_by(Match.round_number, Match.match_number).all()

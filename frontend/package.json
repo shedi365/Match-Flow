@@ -14,7 +14,9 @@
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.470.0",
     "react": "^19.2.7",
+    "react-confetti": "^6.4.0",
     "react-dom": "^19.2.7",
+    "react-xarrows": "^2.0.2",
     "sonner": "^2.0.7"
   },
   "devDependencies": {

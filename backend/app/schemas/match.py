@@ -11,8 +11,14 @@ class MatchBase(BaseModel):
     player1_id: Optional[int] = None
     player2_id: Optional[int] = None
     winner_id: Optional[int] = None
-    score_p1: Optional[int] = 0
-    score_p2: Optional[int] = 0
+    score_p1: Optional[int] = None
+    score_p2: Optional[int] = None
+    penalties_p1: Optional[int] = None
+    penalties_p2: Optional[int] = None
+    p1_has_reported: bool = False
+    p2_has_reported: bool = False
+    p1_evidence_url: Optional[str] = None
+    p2_evidence_url: Optional[str] = None
 
 class MatchCreate(MatchBase):
     pass
@@ -28,3 +34,17 @@ class MatchResponse(MatchBase):
 
     class Config:
         from_attributes = True
+
+class MatchReport(BaseModel):
+    score_p1: int
+    score_p2: int
+    penalties_p1: Optional[int] = None
+    penalties_p2: Optional[int] = None
+    evidence_url: Optional[str] = None
+
+class MatchVerify(BaseModel):
+    score_p1: int
+    score_p2: int
+    penalties_p1: Optional[int] = None
+    penalties_p2: Optional[int] = None
+    winner_id: int

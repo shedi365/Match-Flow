@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, tournaments
+from app.routers import auth, tournaments, matches
+
 from app.database import SessionLocal
 from app.models.role import Role
 
@@ -41,6 +42,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(tournaments.router)
+app.include_router(matches.router)
 
 @app.get("/")
 def read_root():

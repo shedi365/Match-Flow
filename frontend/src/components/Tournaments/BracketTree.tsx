@@ -157,7 +157,7 @@ export const BracketTree: React.FC<{ tournamentId: number, onBack: () => void }>
         </h2>
         
         {matches.length > 0 ? (
-          <ScrollArea className="w-full rounded-md border border-border/50 bg-background/50">
+          <ScrollArea horizontal className="w-full rounded-md border border-border/50 bg-background/50">
             <Xwrapper>
               <div className="flex gap-20 min-w-max relative justify-center items-center py-12 px-12">
                 <BracketLines matches={matches} />

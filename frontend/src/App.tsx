@@ -32,7 +32,13 @@ function AppContent() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 flex justify-between items-center bg-background/80 backdrop-blur-xl border-b border-border px-8 py-4">
         {/* Logo (Izquierda) */}
-        <div className="w-1/3 flex items-center gap-2">
+        <div 
+          className="w-1/3 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => {
+            setSelectedTournamentId(null);
+            setActiveTab('my_tournaments');
+          }}
+        >
           <Trophy className="w-8 h-8 text-primary" />
           <h1 className="text-3xl font-black italic tracking-tighter uppercase text-white">
             Match<span className="text-primary">Flow</span>

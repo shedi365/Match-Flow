@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthModal } from './components/Auth/AuthModal';
-import { TournamentList } from './components/Tournaments/TournamentList';
-import { BracketTree } from './components/Tournaments/BracketTree';
+import { TournamentList } from "./components/Tournaments/TournamentList";
+import { BracketTree } from "./components/Tournaments/BracketTree";
+import { SettingsModal } from "./components/Profile/SettingsModal";
 import { Toaster } from 'sonner';
 import { LogOut, ArrowLeft, Trophy, Settings, User } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "./components/ui/tabs";
@@ -21,6 +22,8 @@ function AppContent() {
   const { isAuthenticated, logoutUser, gamertag, isAdmin } = useAuth();
   const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'my_tournaments' | 'available' | 'history'>('my_tournaments');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'security'>('profile');
 
   if (!isAuthenticated) {
     return <AuthModal />;
@@ -62,9 +65,9 @@ function AppContent() {
               className="w-full max-w-[400px]"
             >
               <TabsList className="grid w-full grid-cols-3 bg-secondary/50 border border-border h-11">
-                <TabsTrigger value="my_tournaments" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold rounded-md transition-all">Mis Torneos</TabsTrigger>
-                <TabsTrigger value="available" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold rounded-md transition-all">Disponibles</TabsTrigger>
-                <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold rounded-md transition-all">Historial</TabsTrigger>
+                <TabsTrigger value="my_tournaments" className="data-[active]:bg-primary data-[active]:text-primary-foreground font-bold rounded-md transition-all">Mis Torneos</TabsTrigger>
+                <TabsTrigger value="available" className="data-[active]:bg-primary data-[active]:text-primary-foreground font-bold rounded-md transition-all">Disponibles</TabsTrigger>
+                <TabsTrigger value="history" className="data-[active]:bg-primary data-[active]:text-primary-foreground font-bold rounded-md transition-all">Historial</TabsTrigger>
               </TabsList>
             </Tabs>
           )}
@@ -94,16 +97,20 @@ function AppContent() {
                 </div>
               </div>
               <DropdownMenuSeparator className="bg-border" />
-              <DropdownMenuItem className="cursor-pointer focus:bg-secondary/50">
+              <DropdownMenuItem 
+                className="cursor-pointer focus:bg-secondary/50"
+                onClick={() => { setSettingsTab('profile'); setIsSettingsOpen(true); }}
+              >
                 <User className="mr-2 h-4 w-4" />
                 <span>Perfil</span>
               </DropdownMenuItem>
-              {isAdmin && (
-                <DropdownMenuItem className="cursor-pointer focus:bg-secondary/50">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Configuración</span>
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem 
+                className="cursor-pointer focus:bg-secondary/50"
+                onClick={() => { setSettingsTab('security'); setIsSettingsOpen(true); }}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configuración</span>
+              </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem 
                 onClick={logoutUser}
@@ -135,6 +142,11 @@ function AppContent() {
           </main>
         </div>
       </div>
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        defaultTab={settingsTab} 
+      />
     </div>
   );
 }

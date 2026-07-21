@@ -22,6 +22,13 @@ class UserLogin(BaseModel):
     gamertag: str
     password: str
 
+class UserUpdateGamertag(BaseModel):
+    new_gamertag: str
+
+class UserUpdatePassword(BaseModel):
+    current_password: str
+    new_password: str
+
 class UserResponse(UserBase):
     id: int
     role_name: str

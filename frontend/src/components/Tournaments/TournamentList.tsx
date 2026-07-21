@@ -42,7 +42,7 @@ export const TournamentList: React.FC<{
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [maxPlayersFilter, setMaxPlayersFilter] = useState<number | 'all'>('all');
+  const [maxPlayersFilter, setMaxPlayersFilter] = useState<number | 'todos'>('todos');
   const { isAdmin } = useAuth();
 
   const loadTournaments = async () => {
@@ -141,7 +141,7 @@ export const TournamentList: React.FC<{
     historyTournaments
   )
     .filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .filter(t => maxPlayersFilter === 'all' || t.max_players === maxPlayersFilter);
+    .filter(t => maxPlayersFilter === 'todos' || t.max_players === maxPlayersFilter);
 
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary w-8 h-8" /></div>;
 
@@ -177,13 +177,13 @@ export const TournamentList: React.FC<{
           </div>
           <Select
             value={String(maxPlayersFilter)}
-            onValueChange={(val) => setMaxPlayersFilter(val === 'all' ? 'all' : Number(val))}
+            onValueChange={(val) => setMaxPlayersFilter(val === 'todos' ? 'todos' : Number(val))}
           >
             <SelectTrigger className="w-full h-11 pl-9 bg-secondary/50 border-border text-foreground">
               <SelectValue placeholder="Tamaño: Todos" />
             </SelectTrigger>
             <SelectContent className="bg-card border-border">
-              <SelectItem value="all">Tamaño: Todos</SelectItem>
+              <SelectItem value="todos">Tamaño: Todos</SelectItem>
               <SelectItem value="4">4 Jugadores</SelectItem>
               <SelectItem value="8">8 Jugadores</SelectItem>
               <SelectItem value="16">16 Jugadores</SelectItem>
@@ -289,7 +289,7 @@ export const TournamentList: React.FC<{
               <div className="col-span-1 md:col-span-2 py-16 flex flex-col items-center justify-center text-muted-foreground bg-card/30 border border-border border-dashed rounded-xl">
                 <Calendar className="w-12 h-12 mb-4 opacity-50" />
                 <p className="text-center max-w-sm">
-                  {searchQuery || maxPlayersFilter !== 'all'
+                  {searchQuery || maxPlayersFilter !== 'todos'
                     ? `No se encontraron torneos que coincidan con los filtros.`
                     : activeTab === 'my_tournaments' 
                       ? "No estás inscrito en ningún torneo activo actualmente." 

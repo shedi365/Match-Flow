@@ -37,3 +37,15 @@ def create_user(db: Session, user: UserCreate):
     db.commit()
     db.refresh(db_user)
     return db_user
+
+def update_user_gamertag(db: Session, user: User, new_gamertag: str):
+    user.gamertag = new_gamertag
+    db.commit()
+    db.refresh(user)
+    return user
+
+def update_user_password(db: Session, user: User, new_password: str):
+    user.hashed_password = get_password_hash(new_password)
+    db.commit()
+    db.refresh(user)
+    return user

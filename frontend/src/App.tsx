@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthModal } from './components/Auth/AuthModal';
 import { TournamentList } from "./components/Tournaments/TournamentList";
 import { BracketTree } from "./components/Tournaments/BracketTree";
 import { SettingsModal } from "./components/Profile/SettingsModal";
 import { Toaster } from 'sonner';
-import { LogOut, ArrowLeft, Trophy, Settings, User } from 'lucide-react';
+import { LogOut, ArrowLeft, Trophy, Settings, User, HelpCircle } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Avatar, AvatarFallback } from "./components/ui/avatar";
 import {
@@ -24,6 +26,34 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<'my_tournaments' | 'available' | 'history'>('my_tournaments');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'profile' | 'security'>('profile');
+
+  const startTour = () => {
+    const driverObj = driver({
+      showProgress: true,
+      popoverClass: 'matchflow-theme',
+      nextBtnText: 'Siguiente',
+      prevBtnText: 'Anterior',
+      doneBtnText: 'Listo',
+      steps: [
+        { element: '#tabs-navigation', popover: { title: 'Navegación', description: 'Usa estas pestañas para ver tus torneos, explorar otros nuevos o ver el historial.', side: "bottom", align: 'start' } },
+        { element: '#tournaments-list', popover: { title: 'Torneos', description: 'Aquí verás la lista de torneos. Selecciona uno para ver sus detalles o unirte.', side: "top", align: 'start' } },
+        { element: '#profile-menu', popover: { title: 'Perfil y Configuración', description: 'Accede a tu perfil, cambia tu configuración de seguridad o cierra sesión.', side: "left", align: 'start' } },
+      ]
+    });
+    driverObj.drive();
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const tourCompleted = localStorage.getItem('tourCompleted');
+      if (!tourCompleted) {
+        setTimeout(() => {
+          startTour();
+          localStorage.setItem('tourCompleted', 'true');
+        }, 500);
+      }
+    }
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) {
     return <AuthModal />;
@@ -60,6 +90,7 @@ function AppContent() {
             </Button>
           ) : (
             <Tabs 
+              id="tabs-navigation"
               value={activeTab} 
               onValueChange={(val) => setActiveTab(val as any)}
               className="w-full max-w-[400px]"
@@ -75,8 +106,12 @@ function AppContent() {
 
         {/* Derecha: Perfil y Logout */}
         <div className="w-1/3 flex justify-end items-center gap-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger 
+          <Button variant="ghost" size="icon" onClick={startTour} className="rounded-full hover:bg-secondary/50 border border-transparent">
+            <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+          </Button>
+          <div id="profile-menu">
+            <DropdownMenu>
+              <DropdownMenuTrigger 
               render={
                 <Button variant="ghost" className="relative h-12 w-12 rounded-full focus-visible:ring-primary hover:bg-secondary/50 p-0 border border-border">
                   <Avatar className="h-11 w-11">
@@ -121,6 +156,7 @@ function AppContent() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </div>
       </header>
       

@@ -194,7 +194,7 @@ export const TournamentList: React.FC<{
         </div>
       </div>
 
-      <ScrollArea className="h-[60vh] w-full rounded-md pr-4">
+      <ScrollArea id="tournaments-list" className="h-[60vh] w-full rounded-md pr-4">
         <AnimatePresence mode="wait">
           <motion.div 
             key={activeTab}

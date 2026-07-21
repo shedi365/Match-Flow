@@ -71,3 +71,67 @@ body {
   stroke-dasharray: 10 10;
   animation: dash-pulse 0.5s linear infinite;
 }
+
+/* Custom Driver.js Theme */
+.driver-popover.matchflow-theme {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-lg);
+}
+
+.driver-popover.matchflow-theme .driver-popover-title {
+  font-size: 20px;
+  color: hsl(var(--foreground));
+  font-weight: 700;
+}
+
+.driver-popover.matchflow-theme .driver-popover-description {
+  color: hsl(var(--muted-foreground));
+  font-size: 14px;
+}
+
+.driver-popover.matchflow-theme .driver-popover-progress-text {
+  color: hsl(var(--muted-foreground));
+}
+
+.driver-popover.matchflow-theme button {
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  text-shadow: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.driver-popover.matchflow-theme button:hover {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+}
+
+.driver-popover.matchflow-theme .driver-popover-close-btn {
+  color: hsl(var(--muted-foreground));
+}
+
+.driver-popover.matchflow-theme .driver-popover-close-btn:hover {
+  color: hsl(var(--foreground));
+}
+
+.driver-popover.matchflow-theme .driver-popover-arrow-side-left.driver-popover-arrow {
+  border-left-color: hsl(var(--border));
+}
+
+.driver-popover.matchflow-theme .driver-popover-arrow-side-right.driver-popover-arrow {
+  border-right-color: hsl(var(--border));
+}
+
+.driver-popover.matchflow-theme .driver-popover-arrow-side-top.driver-popover-arrow {
+  border-top-color: hsl(var(--border));
+}
+
+.driver-popover.matchflow-theme .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-bottom-color: hsl(var(--border));
+}
